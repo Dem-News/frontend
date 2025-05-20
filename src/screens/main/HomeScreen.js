@@ -138,7 +138,6 @@ export default function HomeScreen({ navigation }) {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
@@ -159,7 +158,7 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <FlatList
-        data={news}
+        data={news.news}
         renderItem={({ item }) => (
           <NewsCard
             news={item}
@@ -168,7 +167,7 @@ export default function HomeScreen({ navigation }) {
             onFlag={(reason) => handleFlag(item._id, reason)}
           />
         )}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item, index) => item._id || index.toString()}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }

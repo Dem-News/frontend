@@ -22,8 +22,9 @@ export default function NewsDetailScreen({ route, navigation }) {
   const dispatch = useDispatch();
   const { newsId } = route.params;
   const { user } = useSelector((state) => state.auth);
+  const { currentLocation } = useSelector((state) => state.location);
   const news = useSelector((state) => 
-    state.news.news.find(n => n._id === newsId)
+    state.news.news.news?.find(n => n._id === newsId)
   );
   const [loading, setLoading] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -33,7 +34,7 @@ export default function NewsDetailScreen({ route, navigation }) {
   useEffect(() => {
     fetchComments();
   }, [newsId]);
-
+  
   const fetchComments = async () => {
     try {
       setLoadingComments(true);
@@ -45,7 +46,7 @@ export default function NewsDetailScreen({ route, navigation }) {
       setLoadingComments(false);
     }
   };
-
+  
   const handleAddComment = async () => {
     if (!commentText.trim()) {
       Alert.alert('Error', 'Please enter a comment');
@@ -56,7 +57,6 @@ export default function NewsDetailScreen({ route, navigation }) {
       setLoading(true);
       const response = await newsAPI.addComment(newsId, commentText);
       dispatch(addComment({ newsId, comment: response.data }));
-      setComments([...comments, response.data]);
       setCommentText('');
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to add comment');
@@ -76,7 +76,12 @@ export default function NewsDetailScreen({ route, navigation }) {
   const handleVerify = async () => {
     try {
       setLoading(true);
-      const response = await newsAPI.verifyNews(news._id);
+      const response = await newsAPI.verifyNews(news._id, {
+        coordinates: {
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude
+        }
+      });
       dispatch(verifyNews(response.data));
       Alert.alert('Success', 'News verified successfully');
     } catch (error) {

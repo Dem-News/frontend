@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.10.101:5000/api';
+const API_URL = 'http://192.168.10.102:5000/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -14,7 +14,6 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('token');
-    console.log('Token being sent:', token);
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -60,9 +59,11 @@ export const authAPI = {
 export const newsAPI = {
   createNews: (newsData) => api.post('/news', newsData),
   getNewsByLocation: (params) => api.get('/news/location', { params }),
-  verifyNews: (newsId) => api.post(`/news/${newsId}/verify`),
+  verifyNews: (newsId, data) => api.post(`/news/${newsId}/verify`, data),
   flagNews: (newsId, reason) => api.post(`/news/${newsId}/flag`, { reason }),
   searchNews: (params) => api.get('/news/search', { params }),
+  getComments: (newsId) => api.get(`/news/${newsId}/comments`),
+  addComment: (newsId, content) => api.post(`/news/${newsId}/comments`, { content }),
 };
 
 export default api; 
