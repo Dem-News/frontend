@@ -11,12 +11,31 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { verifyNews, flagNews, addComment } from '../../store/slices/newsSlice';
 import { newsAPI } from '../../services/api';
+
+const FLAG_REASONS = [
+  'inappropriate',
+  'false_information',
+  'spam',
+  'hate_speech',
+  'violence',
+  'other'
+];
+
+const FLAG_REASON_DISPLAY = {
+  inappropriate: 'Inappropriate Content',
+  false_information: 'False Information',
+  spam: 'Spam',
+  hate_speech: 'Hate Speech',
+  violence: 'Violence',
+  other: 'Other'
+};
 
 export default function NewsDetailScreen({ route, navigation }) {
   const dispatch = useDispatch();
@@ -30,6 +49,9 @@ export default function NewsDetailScreen({ route, navigation }) {
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [showFlagModal, setShowFlagModal] = useState(false);
+  const [flagReason, setFlagReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
 
   useEffect(() => {
     fetchComments();
@@ -85,43 +107,46 @@ export default function NewsDetailScreen({ route, navigation }) {
       dispatch(verifyNews(response.data));
       Alert.alert('Success', 'News verified successfully');
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to verify news');
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.error || 'Something went wrong';
+    
+        if (status === 400 && message === 'You have already verified this news') {
+          alert('You already verified this news.');
+        } else {
+          alert(`${message}`);
+        }
+      } else {
+        alert('Network or server error.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFlag = async () => {
-    Alert.prompt(
-      'Flag News',
-      'Please provide a reason for flagging this news:',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Submit',
-          onPress: async (reason) => {
-            if (!reason) {
-              Alert.alert('Error', 'Please provide a reason');
-              return;
-            }
-            try {
-              setLoading(true);
-              const response = await newsAPI.flagNews(news._id, reason);
-              dispatch(flagNews(response.data));
-              Alert.alert('Success', 'News flagged successfully');
-            } catch (error) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to flag news');
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ],
-      'plain-text'
-    );
+  const handleFlag = () => {
+    setShowFlagModal(true);
+  };
+
+  const handleFlagSubmit = async () => {
+    const reason = flagReason === 'Other' ? customReason : flagReason;
+    if (!reason) {
+      Alert.alert('Error', 'Please provide a reason');
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await newsAPI.flagNews(news._id, reason);
+      dispatch(flagNews(response.data));
+      Alert.alert('Success', 'News flagged successfully');
+      setShowFlagModal(false);
+      setFlagReason('');
+      setCustomReason('');
+    } catch (error) {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to flag news');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -233,6 +258,72 @@ export default function NewsDetailScreen({ route, navigation }) {
           <Ionicons name="send" size={24} color={commentText.trim() ? '#007AFF' : '#ccc'} />
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={showFlagModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowFlagModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Flag News</Text>
+              <TouchableOpacity
+                onPress={() => setShowFlagModal(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.flagSection}>
+              <Text style={styles.flagLabel}>Select a reason</Text>
+              <View style={styles.reasonsContainer}>
+                {FLAG_REASONS.map((reason) => (
+                  <TouchableOpacity
+                    key={reason}
+                    style={[
+                      styles.reasonButton,
+                      flagReason === reason && styles.reasonButtonActive,
+                    ]}
+                    onPress={() => setFlagReason(reason)}
+                  >
+                    <Text
+                      style={[
+                        styles.reasonText,
+                        flagReason === reason && styles.reasonTextActive,
+                      ]}
+                    >
+                      {FLAG_REASON_DISPLAY[reason]}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {flagReason === 'Other' && (
+                <TextInput
+                  style={styles.customReasonInput}
+                  placeholder="Please specify the reason..."
+                  value={customReason}
+                  onChangeText={setCustomReason}
+                  multiline
+                />
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleFlagSubmit}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>
+                {loading ? 'Submitting...' : 'Submit Flag'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -423,5 +514,83 @@ const styles = StyleSheet.create({
   },
   commentButtonDisabled: {
     opacity: 0.5,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  flagSection: {
+    marginBottom: 20,
+  },
+  flagLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  reasonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  reasonButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  reasonButtonActive: {
+    backgroundColor: '#FF5252',
+  },
+  reasonText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  reasonTextActive: {
+    color: '#fff',
+  },
+  customReasonInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 10,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  submitButton: {
+    backgroundColor: '#FF5252',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 
