@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  Image
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../store/slices/authSlice';
@@ -64,12 +65,18 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
-  return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Join our decentralized news community</Text>
+    
+  const images = {
+    logo: require('../../../assets/logo.svg'),
+  };
 
+  return (
+    <View style={styles.container}>
+      <View style={styles.titleContainer}>
+        <Image source={images['logo']} style={styles.logo} />
+        <Text style={styles.subtitle}>Join our decentralized news community</Text>
+      </View>
+      <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
           placeholder="Username"
@@ -77,7 +84,6 @@ export default function RegisterScreen({ navigation }) {
           onChangeText={(value) => handleChange('username', value)}
           autoCapitalize="none"
         />
-
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -86,7 +92,6 @@ export default function RegisterScreen({ navigation }) {
           keyboardType="email-address"
           autoCapitalize="none"
         />
-
         <TextInput
           style={styles.input}
           placeholder="Password"
@@ -94,7 +99,6 @@ export default function RegisterScreen({ navigation }) {
           onChangeText={(value) => handleChange('password', value)}
           secureTextEntry
         />
-
         <TextInput
           style={styles.input}
           placeholder="Confirm Password"
@@ -102,7 +106,8 @@ export default function RegisterScreen({ navigation }) {
           onChangeText={(value) => handleChange('confirmPassword', value)}
           secureTextEntry
         />
-
+      </View>
+      <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleSubmit}
@@ -112,57 +117,63 @@ export default function RegisterScreen({ navigation }) {
             {loading ? 'Creating Account...' : 'Create Account'}
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={styles.linkText}>
-            Already have an account? Login here
+        <View style={styles.linkButton}>
+          <Text style={styles.linkLabel}>
+            Already have an account?
           </Text>
-        </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.linkText}>
+              Login here
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  content: {
     padding: 20,
-    paddingTop: 60,
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    gap: 32,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
+  titleContainer: {
+    gap: 12,
+  },
+  logo: {
+    width: 210,
+    height: 70,
+    resizeMode: 'contain',
+    alignSelf: 'center',
   },
   subtitle: {
     fontSize: 18,
-    color: '#666',
+    color: '#000',
     textAlign: 'center',
-    marginBottom: 30,
+  },
+  inputContainer: {
+    gap: 12,
   },
   input: {
-    height: 50,
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     fontSize: 16,
   },
+  buttonContainer: {
+    gap: 12,
+  },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#F20D33',
     height: 50,
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 15,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -173,11 +184,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   linkButton: {
-    marginTop: 20,
     alignItems: 'center',
+    flexDirection: 'row',
+    alignSelf: 'center',
+    gap: 8,
+  },
+  linkLabel: {
+    fontSize: 14,
   },
   linkText: {
     color: '#007AFF',
-    fontSize: 16,
+    fontSize: 14,
   },
-}); 
+});

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Image
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch } from 'react-redux';
@@ -47,40 +48,48 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const images = {
+    logo: require('../../../assets/logo.svg'),
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Decentralized News</Text>
-      <Text style={styles.subtitle}>Login to your account</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.linkButton}
-        onPress={() => navigation.navigate('Register')}
-      >
-        <Text style={styles.linkText}>
-          Don't have an account? Register here
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.titleContainer}>
+        <Image source={images['logo']} style={styles.logo} />
+        <Text style={styles.subtitle}>Login to your account</Text>
+      </View>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+      </View>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Login</Text>
+        </TouchableOpacity>
+        <View style={styles.linkButton}>
+          <Text style={styles.linkLabel}>
+            Don't have an account?
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.linkText}>
+              Join now
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -91,35 +100,42 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
     backgroundColor: '#fff',
+    gap: 32,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
+  titleContainer: {
+    gap: 12,
+  },
+  logo: {
+    width: 210,
+    height: 70,
+    resizeMode: 'contain',
+    alignSelf: 'center',
   },
   subtitle: {
     fontSize: 18,
-    color: '#666',
+    color: '#000',
     textAlign: 'center',
-    marginBottom: 30,
+  },
+  inputContainer: {
+    gap: 12,  
   },
   input: {
-    height: 50,
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     fontSize: 16,
   },
+  buttonContainer: {
+    gap: 12,
+  },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#F20D33',
     height: 50,
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 15,
   },
   buttonText: {
     color: '#fff',
@@ -127,11 +143,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   linkButton: {
-    marginTop: 20,
     alignItems: 'center',
+    flexDirection: 'row',
+    alignSelf: 'center',
+    gap: 8,
+  },
+  linkLabel: {
+    fontSize: 14,
   },
   linkText: {
     color: '#007AFF',
-    fontSize: 16,
+    fontSize: 14,
   },
 }); 

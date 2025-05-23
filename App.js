@@ -5,8 +5,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Provider } from 'react-redux';
 import { store } from './src/store';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
-
+import { House, Plus, User } from 'phosphor-react-native';
+import { View } from 'react-native';
 // Screens
 import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
@@ -20,32 +20,71 @@ const Tab = createBottomTabNavigator();
 
 function MainTabs() {
   return (
-    <Tab.Navigator>
+    <Tab.Navigator 
+      screenOptions={{
+        headerShown: false,
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: '#F20D33',
+        tabBarInactiveTintColor: '#999',
+        tabBarPosition: 'bottom',
+        tabBarHideOnKeyboard: true,
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 16,
+          marginHorizontal: 60,
+          borderRadius: 24,
+          backgroundColor: '#fff',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 0.1,
+          shadowRadius: 5,
+          elevation: 5,
+          height: 70,
+        },
+        tabBarItemStyle: {
+          paddingTop: 16,
+        },
+      }}
+    >
       <Tab.Screen 
         name="Home" 
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <House size={size} color={color} weight={focused ? 'fill' : 'regular'} />
           ),
+          tabBarLabel: () => null, 
+        }}
+      />
+       <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ color, size, focused }) => (
+            <User size={size} color={color} weight={focused ? 'fill' : 'regular'}/>
+          ),
+          tabBarLabel: () => null,
         }}
       />
       <Tab.Screen 
         name="Create" 
         component={CreateNewsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <View
+              style={{
+                width: 60,
+                height: 60,
+                backgroundColor: '#F20D33',
+                borderRadius: 20,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Plus size={size} color='#fff' weight='regular' />
+            </View>
           ),
-        }}
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
-          ),
+          tabBarLabel: () => null,
         }}
       />
     </Tab.Navigator>

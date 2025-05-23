@@ -102,7 +102,7 @@ export default function ProfileScreen({ navigation }) {
         <Text style={styles.sectionTitle}>My Posts</Text>
         {loading ? (
           <ActivityIndicator size="large" color="#007AFF" />
-        ) : userNews.length > 0 ? (
+        ) : userNews?.length > 0 ? (
           userNews.map((news) => (
             <NewsCard
               key={news.id}
