@@ -11,7 +11,7 @@ import {
 import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
-import { markNotificationAsRead } from '../../store/slices/notificationSlice';
+// import { markNotificationAsRead } from '../../store/slices/notificationSlice';
 import { notificationAPI } from '../../services/api';
 
 export default function NotificationsScreen({ navigation }) {
@@ -43,35 +43,35 @@ export default function NotificationsScreen({ navigation }) {
     setRefreshing(false);
   };
 
-  const handleNotificationPress = async (notification) => {
-    if (!notification.read) {
-      try {
-        await notificationAPI.markAsRead(notification._id);
-        dispatch(markNotificationAsRead(notification._id));
-        setNotifications(notifications.map(n =>
-          n._id === notification._id ? { ...n, read: true } : n
-        ));
-      } catch (error) {
-        console.error('Failed to mark notification as read:', error);
-      }
-    }
+  // const handleNotificationPress = async (notification) => {
+  //   if (!notification.read) {
+  //     try {
+  //       await notificationAPI.markAsRead(notification._id);
+  //       dispatch(markNotificationAsRead(notification._id));
+  //       setNotifications(notifications.map(n =>
+  //         n._id === notification._id ? { ...n, read: true } : n
+  //       ));
+  //     } catch (error) {
+  //       console.error('Failed to mark notification as read:', error);
+  //     }
+  //   }
 
-    // Navigate based on notification type
-    switch (notification.type) {
-      case 'news_verification':
-      case 'news_flag':
-        navigation.navigate('NewsDetail', { newsId: notification.newsId });
-        break;
-      case 'comment':
-        navigation.navigate('NewsDetail', {
-          newsId: notification.newsId,
-          commentId: notification.commentId,
-        });
-        break;
-      default:
-        break;
-    }
-  };
+  //   // Navigate based on notification type
+  //   switch (notification.type) {
+  //     case 'news_verification':
+  //     case 'news_flag':
+  //       navigation.navigate('NewsDetail', { newsId: notification.newsId });
+  //       break;
+  //     case 'comment':
+  //       navigation.navigate('NewsDetail', {
+  //         newsId: notification.newsId,
+  //         commentId: notification.commentId,
+  //       });
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  // };
 
   const getNotificationIcon = (type) => {
     switch (type) {

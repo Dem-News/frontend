@@ -30,6 +30,7 @@ import {
 } from '../../store/slices/locationSlice';
 import { newsAPI } from '../../services/api';
 import NewsCard from '../../components/NewsCard';
+import { List } from 'phosphor-react-native';
 
 const CATEGORIES = [
   'politics',
@@ -140,7 +141,21 @@ export default function HomeScreen({ navigation }) {
   }
   return (
     <View style={styles.container}>
-      <View style={styles.searchContainer}>
+      <View style={styles.pageHeader}>
+        <View style={styles.tabBar}>
+          <Text style={styles.tabBarItemActive}>Local</Text>
+          <Text style={styles.tabBarItem}> Explore</Text>
+        </View>
+        <View style={styles.viewSwitch}>
+          <View style={styles.switchItemContainerActive}>
+            <List size={20} />
+          </View>
+          <View style={styles.switchItemContainer}>
+            <Text style={styles.viewLabel}>Map</Text>
+          </View>
+        </View>
+      </View>
+      {/* <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
           placeholder="Search news..."
@@ -155,7 +170,7 @@ export default function HomeScreen({ navigation }) {
         >
           <Ionicons name="options" size={24} color="#007AFF" />
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       <FlatList
         data={news.news}
@@ -257,12 +272,60 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Page header
+  pageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 40,
+    paddingBottom: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderColor: "#00000010",
+  },
+  tabBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  tabBarItem: {
+    fontSize: 20,
+    color: '#00000050',
+    fontWeight: '500',
+  },
+  tabBarItemActive: {
+    fontSize: 24,
+    color: '#000000',
+    fontWeight: '800',
+  },
+  viewSwitch: {
+    flexDirection: 'row',
+    backgroundColor: '#EDEDED',
+    borderRadius: 16,
+    alignItems: 'center',
+    padding: 4,
+  },
+  switchItemContainer: {
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 12,
+  },  
+  switchItemContainerActive: {
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    backgroundColor: '#fff',
+    borderRadius: 12,
+  },  
+  viewLabel: {
+    fontSize: 14,
+    color: '#00000070',
   },
   searchContainer: {
     flexDirection: 'row',

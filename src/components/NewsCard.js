@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
+import { Heart, ChatCircle } from 'phosphor-react-native';
+
 
 export default function NewsCard({ news, onPress, onVerify, onFlag }) {
   const {
@@ -19,163 +21,135 @@ export default function NewsCard({ news, onPress, onVerify, onFlag }) {
     verificationCount,
     flagCount,
     category,
+    likes= null,
+    comments,
   } = news;
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
-      <View style={styles.header}>
+      <View style={styles.newsContentContainer}>
+        <Text style={styles.newsContent} numberOfLines={4}>
+          {content}
+        </Text>
+      </View>
+      <View style={styles.insights}>
+        <View style={styles.insightItem}>
+          <Heart size={18}/>
+          <Text style={styles.insightItemLabel}>{likes && likes.length > 0 ? likes.length : '0'} likes</Text>
+        </View>
+        <View style={styles.insightItem}>
+          <ChatCircle size={18}/>
+          <Text style={styles.insightItemLabel}>{comments && comments.length > 0 ? comments.length : '0'} comments</Text>
+        </View>
+        <View style={styles.insightItem}>
+          <Text style={styles.viewText}>24</Text>
+          <Text style={styles.insightItemLabel}>views</Text>
+        </View>
+      </View>
+      <View style={styles.postDetails}>
         <View style={styles.authorContainer}>
-          <Text style={styles.author}>{author.username}</Text>
-          <Text style={styles.time}>
-            {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
-          </Text>
-        </View>
-        {isVerified && (
-          <View style={styles.verifiedBadge}>
-            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-            <Text style={styles.verifiedText}>Verified</Text>
-          </View>
-        )}
-      </View>
-
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.content} numberOfLines={3}>
-        {content}
-      </Text>
-
-      <View style={styles.categoryContainer}>
-        <Text style={styles.category}>{category}</Text>
-      </View>
-
-      <View style={styles.footer}>
-        <View style={styles.statsContainer}>
-          <View style={styles.stat}>
-            <Ionicons name="checkmark-circle-outline" size={20} color="#4CAF50" />
-            <Text style={styles.statText}>{verificationCount}</Text>
-          </View>
-          <View style={styles.stat}>
-            <Ionicons name="flag-outline" size={20} color="#FF5252" />
-            <Text style={styles.statText}>{flagCount}</Text>
+          <Text style={styles.authorLabel}>by</Text>
+          <View style={styles.authorDetails}>
+            <Text style={styles.authorName}>{author.username}</Text>
           </View>
         </View>
-
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onVerify()}
-          >
-            <Ionicons name="checkmark-circle-outline" size={24} color="#4CAF50" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onFlag('Inappropriate content')}
-          >
-            <Ionicons name="flag-outline" size={24} color="#FF5252" />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.postCreatedTime}>
+          {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+        </Text>
       </View>
+      <View style={styles.newsVerificationBarContainer}>
+        <View style={styles.newsVerificationBar}>
+        </View>
+        <Text style={styles.verificationCount}>{verificationCount? verificationCount: '0'}</Text>
+      </View>
+      <View style={styles.divider}></View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginHorizontal: 15,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    // borderWidth: 1,
+    // borderColor: 'red'
   },
-  header: {
+  // News content
+  newsContentContainer: {
+    gap: 8,
+  },
+  newsContent: {
+    fontSize: 20,
+    color: '#000000',
+    fontWeight: '700',
+  },
+  // News insights
+  insights: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  insightItem: {
+    flexDirection: 'row',
+    gap: 4,
+    alignItems: 'center',
+  },
+  insightItemLabel: {
+    fontSize: 12,
+    color: '#00000070',
+  },
+  viewText: {
+    fontSize: 14,
+  },
+  // Post details
+  postDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
+  },  
   authorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  authorLabel: {
+    fontSize: 12,
+    color: '#00000070',
+  },
+  authorDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  authorName: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#000000',
+  },
+  postCreatedTime: {
+    fontSize: 12,
+    color: '#00000070',
+  },
+  // News verification
+  newsVerificationBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  newsVerificationBar: {
     flex: 1,
+    height: 16,
+    backgroundColor: '#34C759',
+    borderRadius: 8,
   },
-  author: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  time: {
+  verificationCount: {
     fontSize: 12,
-    color: '#666',
-    marginTop: 2,
+    color: '#0000007o',
   },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  verifiedText: {
-    fontSize: 12,
-    color: '#4CAF50',
-    marginLeft: 4,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  content: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  categoryContainer: {
-    marginBottom: 12,
-  },
-  category: {
-    fontSize: 12,
-    color: '#007AFF',
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  // Divider
+  divider: {
+    height: 1,
+    backgroundColor: '#00000010',
     marginTop: 8,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  stat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  statText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 4,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionButton: {
-    padding: 8,
-    marginLeft: 8,
   },
 }); 

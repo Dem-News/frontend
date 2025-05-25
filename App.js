@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Provider } from 'react-redux';
 import { store } from './src/store';
 import { StatusBar } from 'expo-status-bar';
-import { House, Plus, User } from 'phosphor-react-native';
+import { Bell, House, Plus, User } from 'phosphor-react-native';
 import { View } from 'react-native';
 // Screens
 import LoginScreen from './src/screens/auth/LoginScreen';
@@ -14,6 +14,7 @@ import HomeScreen from './src/screens/main/HomeScreen';
 import CreateNewsScreen from './src/screens/main/CreateNewsScreen';
 import ProfileScreen from './src/screens/main/ProfileScreen';
 import NewsDetailScreen from './src/screens/main/NewsDetailScreen';
+import NotificationsScreen from './src/screens/main/NotificationsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -25,17 +26,17 @@ function MainTabs() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarActiveTintColor: '#F20D33',
-        tabBarInactiveTintColor: '#999',
+        tabBarInactiveTintColor: '#000',
         tabBarPosition: 'bottom',
         tabBarHideOnKeyboard: true,
         tabBarStyle: {
           position: 'absolute',
           bottom: 16,
-          marginHorizontal: 60,
+          marginHorizontal: 40,
           borderRadius: 24,
           backgroundColor: '#fff',
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 5 },
+          shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.1,
           shadowRadius: 5,
           elevation: 5,
@@ -56,6 +57,16 @@ function MainTabs() {
           tabBarLabel: () => null, 
         }}
       />
+      <Tab.Screen 
+        name="Notifiation" 
+        component={NotificationsScreen}
+        options={{
+          tabBarIcon: ({ color, size, focused }) => (
+            <Bell size={size} color={color} weight={focused ? 'fill' : 'regular'} />
+          ),
+          tabBarLabel: () => null, 
+        }}
+      />
        <Tab.Screen 
         name="Profile" 
         component={ProfileScreen}
@@ -70,12 +81,12 @@ function MainTabs() {
         name="Create" 
         component={CreateNewsScreen}
         options={{
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ size }) => (
             <View
               style={{
                 width: 60,
                 height: 60,
-                backgroundColor: '#F20D33',
+                backgroundColor: '#000',
                 borderRadius: 20,
                 justifyContent: 'center',
                 alignItems: 'center',
