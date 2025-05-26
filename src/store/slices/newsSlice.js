@@ -1,10 +1,10 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   news: {
     currentPage: 1,
     news: [],
-    totalPages: 1
+    totalPages: 1,
   },
   currentNews: null,
   loading: false,
@@ -17,7 +17,7 @@ const initialState = {
 };
 
 const newsSlice = createSlice({
-  name: 'news',
+  name: "news",
   initialState,
   reducers: {
     fetchNewsStart: (state) => {
@@ -26,6 +26,7 @@ const newsSlice = createSlice({
     },
     fetchNewsSuccess: (state, action) => {
       state.loading = false;
+      // TODO: Implement proper pagination (e.g., appending news & updating currentPage/totalPages) if required, instead of replacing the entire news object.
       state.news = action.payload;
     },
     fetchNewsFailure: (state, action) => {
@@ -40,7 +41,7 @@ const newsSlice = createSlice({
     },
     updateNews: (state, action) => {
       const index = state.news.news.findIndex(
-        news => news._id === action.payload._id
+        (news) => news._id === action.payload._id,
       );
       if (index !== -1) {
         state.news.news[index] = action.payload;
@@ -50,22 +51,34 @@ const newsSlice = createSlice({
       state.filters = { ...state.filters, ...action.payload };
     },
     verifyNews: (state, action) => {
-      const news = state.news.news.find(n => n._id === action.payload._id);
-      if (news) {
-        news.verificationCount += 1;
-        news.isVerified = news.verificationCount >= 10 && news.flagCount < 3;
+      const index = state.news.news.findIndex(
+        (n) => n._id === action.payload._id,
+      );
+      if (index !== -1) {
+        // Assuming action.payload is the full updated news item from the backend
+        state.news.news[index] = {
+          ...state.news.news[index],
+          ...action.payload,
+        };
+        // TODO: Backend should ideally return the updated 'isVerified' status directly.
       }
     },
     flagNews: (state, action) => {
-      const news = state.news.news.find(n => n._id === action.payload._id);
-      if (news) {
-        news.flagCount += 1;
-        news.isVerified = news.verificationCount >= 10 && news.flagCount < 3;
+      const index = state.news.news.findIndex(
+        (n) => n._id === action.payload._id,
+      );
+      if (index !== -1) {
+        // Assuming action.payload is the full updated news item from the backend
+        state.news.news[index] = {
+          ...state.news.news[index],
+          ...action.payload,
+        };
+        // TODO: Backend should ideally return the updated 'isVerified' status directly.
       }
     },
     addComment: (state, action) => {
       const { newsId, comment } = action.payload;
-      const news = state.news.news.find(n => n._id === newsId);
+      const news = state.news.news.find((n) => n._id === newsId);
       if (news) {
         if (!news.comments) {
           news.comments = [];
@@ -89,4 +102,4 @@ export const {
   addComment,
 } = newsSlice.actions;
 
-export default newsSlice.reducer; 
+export default newsSlice.reducer;

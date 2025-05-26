@@ -34,7 +34,8 @@
     "react-redux": "^9.2.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "prettier": "3.5.3"
   },
   "private": true
 }
