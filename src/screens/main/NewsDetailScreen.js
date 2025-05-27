@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
   },
   verificationHeaderContent: {
     flex: 1,
-    gap: 8,
+    gap: 4,
   },
   actionButton: {
     padding: 12,
