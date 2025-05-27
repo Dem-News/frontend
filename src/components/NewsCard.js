@@ -6,24 +6,36 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { Heart, ChatCircle } from 'phosphor-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-
-export default function NewsCard({ news, onPress, onVerify, onFlag }) {
+export default function NewsCard({ news, onPress }) {
   const {
-    title,
     content,
     author,
     createdAt,
-    isVerified,
-    verificationCount,
-    flagCount,
-    category,
-    likes= null,
+    verifications,
+    flags,
+    likes,
     comments,
   } = news;
+
+  const verifyResponse = verifications.length;
+  const flagResponse = flags.length;
+
+  const totalLikes = likes.length;
+  const totalComments = comments.length;
+
+  const totalResponse = verifyResponse + flagResponse;
+
+  let verifyPercent = 50;
+  let flagPercent = 50;
+
+  if (totalResponse > 0) {
+    verifyPercent = (verifyResponse / totalResponse) * 100;
+    flagPercent = (flagResponse / totalResponse) * 100;
+  }
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
@@ -35,16 +47,36 @@ export default function NewsCard({ news, onPress, onVerify, onFlag }) {
       <View style={styles.insights}>
         <View style={styles.insightItem}>
           <Heart size={18}/>
-          <Text style={styles.insightItemLabel}>{likes && likes.length > 0 ? likes.length : '0'} likes</Text>
+          <Text style={styles.insightItemLabel}>{totalLikes && totalLikes > 0 ? totalLikes : '0'} likes</Text>
         </View>
         <View style={styles.insightItem}>
           <ChatCircle size={18}/>
-          <Text style={styles.insightItemLabel}>{comments && comments.length > 0 ? comments.length : '0'} comments</Text>
+          <Text style={styles.insightItemLabel}>{totalComments && totalComments > 0 ? totalComments : '0'} comments</Text>
         </View>
         <View style={styles.insightItem}>
           <Text style={styles.viewText}>24</Text>
           <Text style={styles.insightItemLabel}>views</Text>
         </View>
+      </View>
+      <View style={styles.verificationContainer}>
+        <LinearGradient
+          colors={['#34C759', '#fff']}
+          style={[styles.sliderLeft, { width: `${verifyPercent}%` }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <Text style={styles.responseNumber}>{verifyResponse}</Text>
+          <View style={styles.avatars}></View>
+        </LinearGradient>
+        <LinearGradient
+          colors={['#fff', '#F20D33']}
+          style={[styles.sliderRight, { width: `${flagPercent}%` }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <Text style={styles.responseNumber}>{flagResponse}</Text>
+          <View style={styles.avatars}></View>
+        </LinearGradient>
       </View>
       <View style={styles.postDetails}>
         <View style={styles.authorContainer}>
@@ -57,11 +89,6 @@ export default function NewsCard({ news, onPress, onVerify, onFlag }) {
           {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
         </Text>
       </View>
-      <View style={styles.newsVerificationBarContainer}>
-        <View style={styles.newsVerificationBar}>
-        </View>
-        <Text style={styles.verificationCount}>{verificationCount? verificationCount: '0'}</Text>
-      </View>
       <View style={styles.divider}></View>
     </TouchableOpacity>
   );
@@ -72,8 +99,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    // borderWidth: 1,
-    // borderColor: 'red'
   },
   // News content
   newsContentContainer: {
@@ -87,7 +112,7 @@ const styles = StyleSheet.create({
   // News insights
   insights: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
     alignItems: 'center',
   },
   insightItem: {
@@ -123,33 +148,42 @@ const styles = StyleSheet.create({
   },
   authorName: {
     fontSize: 14,
-    fontWeight: 600,
+    fontWeight: 700,
     color: '#000000',
   },
   postCreatedTime: {
     fontSize: 12,
     color: '#00000070',
   },
-  // News verification
-  newsVerificationBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  newsVerificationBar: {
+  // Verification
+  verificationContainer: {
     flex: 1,
-    height: 16,
-    backgroundColor: '#34C759',
-    borderRadius: 8,
+    flexDirection: 'row',
+    overflow: 'hidden',
   },
-  verificationCount: {
-    fontSize: 12,
-    color: '#0000007o',
+  sliderLeft: {
+    flexDirection: 'row',
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  sliderRight: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 12,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    paddingVertical: 8,
+  },
+  responseNumber: {
+    fontSize: 16,
+    fontWeight: 700,
   },
   // Divider
   divider: {
     height: 1,
-    backgroundColor: '#00000010',
+    backgroundColor: '#00000007',
     marginTop: 8,
   },
 }); 

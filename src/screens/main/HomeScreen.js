@@ -182,6 +182,7 @@ export default function HomeScreen({ navigation }) {
             onFlag={(reason) => handleFlag(item._id, reason)}
           />
         )}
+        // ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         keyExtractor={(item, index) => item._id || index.toString()}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderColor: "#00000010",
+    borderColor: "#00000007",
   },
   tabBar: {
     flexDirection: 'row',

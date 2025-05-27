@@ -18,6 +18,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { verifyNews, flagNews, addComment } from '../../store/slices/newsSlice';
 import { newsAPI } from '../../services/api';
+import { Heart, ChatCircle, Check, Flag, ArrowLeft, DotsThreeVertical, ShareFat } from 'phosphor-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const FLAG_REASONS = [
   'inappropriate',
@@ -53,9 +55,27 @@ export default function NewsDetailScreen({ route, navigation }) {
   const [flagReason, setFlagReason] = useState('');
   const [customReason, setCustomReason] = useState('');
 
+  const verifyResponse = news.verifications.length;
+  const flagResponse = news.flags.length;
+
+  const totalResponse = verifyResponse + flagResponse;
+  
+  let verifyPercent = 50;
+  let flagPercent = 50;
+
+  
+  if (totalResponse > 0) {
+    verifyPercent = (verifyResponse / totalResponse) * 100;
+    flagPercent = (flagResponse / totalResponse) * 100;
+  }
+
   useEffect(() => {
     fetchComments();
   }, [newsId]);
+
+  const handleBack = () => {
+    navigation.goBack();
+  };
   
   const fetchComments = async () => {
     try {
@@ -90,7 +110,7 @@ export default function NewsDetailScreen({ route, navigation }) {
   if (!news) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" />
       </View>
     );
   }
@@ -155,89 +175,145 @@ export default function NewsDetailScreen({ route, navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
+      <View style={styles.pageHeader}>
+        <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={handleBack}
+            disabled={loading}
+          >
+            <ArrowLeft size={20} />
+        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handleVerify}
+              disabled={loading}
+            >
+              <DotsThreeVertical size={20} />
+          </TouchableOpacity>
+          <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handleVerify}
+              disabled={loading}
+            >
+              <ShareFat size={20} />
+          </TouchableOpacity>
+        </View>
+      </View>
+      <ScrollView>
+        <View style={styles.contentContainer}>
+          {news.media && news.media.length > 0 && (
+            <ScrollView horizontal style={styles.mediaContainer}>
+              {news.media.map((media, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: media.url }}
+                  style={styles.media}
+                />
+              ))}
+            </ScrollView>
+          )}
+
+          <Text style={styles.content}>{news.content}</Text>
+
+          <View style={styles.insightsContainer}>
+            <View style={styles.insightItem}>
+              <Heart size={24}/>
+              <Text style={styles.insightItemLabel}>{news.likes && news.likes.length > 0 ? likes.length : '0'} likes</Text>
+            </View>
+            <View style={styles.insightItem}>
+              <ChatCircle size={24}/>
+              <Text style={styles.insightItemLabel}>{comments && comments.length > 0 ? comments.length : '0'} comments</Text>
+            </View>
+            <View style={styles.insightItem}>
+              <Text style={styles.viewText}>24</Text>
+              <Text style={styles.insightItemLabel}>views</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider}></View>
+
+          <View style={styles.verificationContainer}>
+            <View style={styles.verificationHeader}>
+              <View style={styles.verificationHeaderContent}>
+                <Text style={styles.verificationTitle}>Verification</Text>
+                <Text style={styles.verificationDescription}>News authenticity details.</Text>
+              </View>
+              <View style={styles.actionsContainer}>
+                <TouchableOpacity
+                  style={[styles.secondaryButton, styles.actionButton]}
+                  onPress={handleVerify}
+                  disabled={loading}
+                >
+                  <Check size={20} color='#34C759' />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.secondaryButton, styles.actionButton]}
+                  onPress={handleFlag}
+                  disabled={loading}
+                >
+                  <Flag size={20} color='#F20D33' />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View style={styles.verificationMetricsContainer}>
+              <View style={styles.sliderContainer}>
+                <LinearGradient
+                  colors={['#34C759', '#fff']}
+                  style={[styles.sliderLeft, { width: `${verifyPercent}%` }]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={styles.responseNumber}>{verifyResponse}</Text>
+                  <View style={styles.avatars}></View>
+                </LinearGradient>
+                <LinearGradient
+                  colors={['#fff', '#F20D33']}
+                  style={[styles.sliderRight, { width: `${flagPercent}%` }]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={styles.responseNumber}>{flagResponse}</Text>
+                  <View style={styles.avatars}></View>
+                </LinearGradient>
+              </View>
+              <Text style={styles.verificationSupportText}><Text style={styles.verificationSupportNumber}>{totalResponse}</Text> users responsed on news within 2 km radius.</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider}></View>
+
           <View style={styles.authorContainer}>
             <Text style={styles.author}>{news.author.username}</Text>
             <Text style={styles.time}>
               {formatDistanceToNow(new Date(news.createdAt), { addSuffix: true })}
             </Text>
           </View>
-          {news.isVerified && (
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-              <Text style={styles.verifiedText}>Verified</Text>
-            </View>
-          )}
-        </View>
 
-        <Text style={styles.title}>{news.title}</Text>
-        <Text style={styles.category}>{news.category}</Text>
-        <Text style={styles.content}>{news.content}</Text>
+          <View style={styles.divider}></View>
 
-        {news.media && news.media.length > 0 && (
-          <ScrollView horizontal style={styles.mediaContainer}>
-            {news.media.map((media, index) => (
-              <Image
-                key={index}
-                source={{ uri: media.url }}
-                style={styles.media}
-              />
-            ))}
-          </ScrollView>
-        )}
-
-        <View style={styles.statsContainer}>
-          <View style={styles.stat}>
-            <Ionicons name="checkmark-circle-outline" size={20} color="#4CAF50" />
-            <Text style={styles.statText}>{news.verificationCount} verifications</Text>
-          </View>
-          <View style={styles.stat}>
-            <Ionicons name="flag-outline" size={20} color="#FF5252" />
-            <Text style={styles.statText}>{news.flagCount} flags</Text>
-          </View>
-        </View>
-
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.verifyButton]}
-            onPress={handleVerify}
-            disabled={loading}
-          >
-            <Ionicons name="checkmark-circle-outline" size={24} color="#4CAF50" />
-            <Text style={styles.actionButtonText}>Verify</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.flagButton]}
-            onPress={handleFlag}
-            disabled={loading}
-          >
-            <Ionicons name="flag-outline" size={24} color="#FF5252" />
-            <Text style={styles.actionButtonText}>Flag</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.commentsSection}>
-          <Text style={styles.commentsTitle}>Comments</Text>
-          
-          {loadingComments ? (
-            <ActivityIndicator size="small" color="#007AFF" />
-          ) : comments.length > 0 ? (
-            comments.map((comment) => (
-              <View key={comment._id} style={styles.commentContainer}>
-                <View style={styles.commentHeader}>
-                  <Text style={styles.commentAuthor}>{comment.author.username}</Text>
-                  <Text style={styles.commentTime}>
-                    {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                  </Text>
+          <View style={styles.commentsSection}>
+            <Text style={styles.commentsTitle}>Comments</Text>
+            
+            {loadingComments ? (
+              <ActivityIndicator size="small" color="#007AFF" />
+            ) : comments.length > 0 ? (
+              comments.map((comment) => (
+                <View key={comment._id} style={styles.commentContainer}>
+                  <View style={styles.commentHeader}>
+                    <Text style={styles.commentAuthor}>{comment.author.username}</Text>
+                    <Text style={styles.commentTime}>
+                      {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                    </Text>
+                  </View>
+                  <Text style={styles.commentText}>{comment.content}</Text>
                 </View>
-                <Text style={styles.commentText}>{comment.content}</Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.noComments}>No comments yet</Text>
-          )}
+              ))
+            ) : (
+              <Text style={styles.noComments}>No comments yet</Text>
+            )}
+          </View>
         </View>
       </ScrollView>
 
@@ -258,7 +334,6 @@ export default function NewsDetailScreen({ route, navigation }) {
           <Ionicons name="send" size={24} color={commentText.trim() ? '#007AFF' : '#ccc'} />
         </TouchableOpacity>
       </View>
-
       <Modal
         visible={showFlagModal}
         animationType="slide"
@@ -333,69 +408,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    flexDirection: 'column',
+    gap: 16,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
+  // Header
+  pageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingTop: 40,
+    paddingBottom: 8,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
-  authorContainer: {
-    flex: 1,
-  },
-  author: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  time: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  verifiedBadge: {
+  buttonContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    gap: 8,
   },
-  verifiedText: {
-    fontSize: 12,
-    color: '#4CAF50',
-    marginLeft: 4,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    padding: 20,
-    paddingBottom: 10,
-  },
-  category: {
-    fontSize: 14,
-    color: '#007AFF',
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
-    marginLeft: 20,
-    marginBottom: 20,
-  },
+  // News content
   content: {
-    fontSize: 16,
-    color: '#333',
-    lineHeight: 24,
-    padding: 20,
-    paddingTop: 0,
+    fontSize: 20,
+    color: '#000000',
+    fontWeight: '700',
   },
   mediaContainer: {
     padding: 20,
@@ -407,51 +450,118 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 12,
   },
-  statsContainer: {
+  // News insights
+  insightsContainer: {
     flexDirection: 'row',
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  stat: {
-    flexDirection: 'row',
+    gap: 12,
     alignItems: 'center',
-    marginRight: 20,
+    justifyContent: 'space-between',
   },
-  statText: {
+  insightItem: {
+    flexDirection: 'row',
+    gap: 4,
+    alignItems: 'center',
+  },
+  insightItemLabel: {
     fontSize: 14,
-    color: '#666',
-    marginLeft: 4,
+    color: '#00000070',
   },
+  viewText: {
+    fontSize: 16,
+  },
+  // Author
+  authorContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  author: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000000',
+  },
+  time: {
+    fontSize: 14,
+    color: '#00000070',
+  },
+  // Action button
   actionsContainer: {
     flexDirection: 'row',
-    padding: 20,
-    paddingTop: 0,
+    gap: 8,
   },
-  actionButton: {
-    flex: 1,
+  secondaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#00000010',
+  },
+  // Verification
+  verificationContainer: {
+    gap: 12,
+  },
+  verificationHeader: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'flex-start',
+  },
+  verificationHeaderContent: {
+    flex: 1,
+    gap: 8,
+  },
+  actionButton: {
     padding: 12,
-    borderRadius: 8,
-    marginHorizontal: 8,
+    borderRadius: 16,
   },
-  verifyButton: {
-    backgroundColor: '#E8F5E9',
+  verificationTitle: {
+    fontSize: 18,
+    fontWeight: 700,
   },
-  flagButton: {
-    backgroundColor: '#FFEBEE',
+  verificationDescription: {
+    fontSize: 14,
+    color: '#00000070',
   },
-  actionButtonText: {
+  verificationMetricsContainer: {
+    gap: 4,
+  },
+  sliderContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  sliderLeft: {
+    flexDirection: 'row',
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  sliderRight: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  responseNumber: {
     fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    fontWeight: 700,
   },
+  verificationSupportText: {
+    fontWeight: 14,
+    color: '#00000070',
+  },
+  verificationSupportNumber: {
+    fontWeight: 14,
+    color: '#000000',
+    fontWeight: 700,
+  },
+  // Comments
   commentsSection: {
     padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
   },
   commentsTitle: {
     fontSize: 18,
@@ -515,6 +625,7 @@ const styles = StyleSheet.create({
   commentButtonDisabled: {
     opacity: 0.5,
   },
+  // Modal
   modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -592,5 +703,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Divider
+  divider: {
+    height: 1,
+    backgroundColor: '#00000007',
   },
 }); 

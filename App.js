@@ -126,7 +126,7 @@ export default function App() {
           <Stack.Screen 
             name="NewsDetail" 
             component={NewsDetailScreen}
-            options={{ title: 'News Details' }}
+            options={{ headerShown: false }}
           />
         </Stack.Navigator>
       </NavigationContainer>
