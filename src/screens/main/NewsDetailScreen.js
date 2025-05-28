@@ -317,8 +317,8 @@ export default function NewsDetailScreen({ route, navigation }) {
                   title="News Location"
                   description={news.content.substring(0, 100) + '...'}
                 >
-                  <View>
-                    <MapPinSimple size={40} color='#FFAA00' />
+                  <View style={styles.marker}>
+                    <MapPinSimple size={24} color='#fff' />
                   </View>
                 </Marker>
                 {/* Radius circle */}
@@ -343,7 +343,7 @@ export default function NewsDetailScreen({ route, navigation }) {
                     title="Verified"
                   >
                     <View style={styles.verifyMarker}>
-                      <Check size={16} color="#fff" />
+                      <Check size={12} color="#fff" />
                     </View>
                   </Marker>
                 ))}
@@ -359,7 +359,7 @@ export default function NewsDetailScreen({ route, navigation }) {
                     title={`Flagged: ${flag.reason}`}
                   >
                     <View style={styles.flagMarker}>
-                      <Flag size={16} color="#fff" />
+                      <Flag size={12} color="#fff" />
                     </View>
                   </Marker>
                 ))}
@@ -666,6 +666,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
   },
+  marker: {
+    backgroundColor: '#FFAA00',
+    padding: 2,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
   map: {
     flex: 1,
     height: 200,
@@ -694,7 +701,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   commentItem: {
-    gap: 4,
+    gap: 2,
   },
   commentHeader: {
     flexDirection: 'row',

@@ -47,14 +47,20 @@ export default function HomeScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [viewType, setViewType] = useState('local');
+  const [localNews, setLocalNews] = useState([]);
+  const [exploreNews, setExploreNews] = useState([]);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   useEffect(() => {
     requestLocationPermission();
+    // Fetch explore news on first load
+    fetchExploreNews();
   }, []);
 
   useEffect(() => {
     if (currentLocation) {
-      fetchNews();
+      fetchLocalNews();
     }
   }, [currentLocation, filters]);
 
@@ -78,26 +84,58 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  const fetchNews = async () => {
+  const fetchLocalNews = async () => {
     try {
       dispatch(fetchNewsStart());
       const response = await newsAPI.getNewsByLocation({
-        latitude: currentLocation.latitude,
-        longitude: currentLocation.longitude,
-        radius: filters.radius,
+        scope: 'local',
+        location: `${currentLocation.longitude},${currentLocation.latitude}`,
         category: filters.category,
         verified: filters.verified,
         query: searchQuery,
       });
-      dispatch(fetchNewsSuccess(response.data));
+      
+      if (response.data) {
+        setLocalNews(response.data.news);
+        dispatch(fetchNewsSuccess(response.data));
+      } else {
+        dispatch(fetchNewsFailure('No data received from server'));
+      }
     } catch (error) {
+      console.error('API Error:', error.response?.data);
+      dispatch(fetchNewsFailure(error.message));
+    }
+  };
+
+  const fetchExploreNews = async () => {
+    try {
+      dispatch(fetchNewsStart());
+      const response = await newsAPI.getNewsByLocation({
+        scope: 'explore',
+        category: filters.category,
+        verified: filters.verified,
+        query: searchQuery,
+      });
+      
+      if (response.data) {
+        setExploreNews(response.data.news);
+        dispatch(fetchNewsSuccess(response.data));
+      } else {
+        dispatch(fetchNewsFailure('No data received from server'));
+      }
+    } catch (error) {
+      console.error('API Error:', error.response?.data);
       dispatch(fetchNewsFailure(error.message));
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchNews();
+    if (viewType === 'local') {
+      await fetchLocalNews();
+    } else {
+      await fetchExploreNews();
+    }
     setRefreshing(false);
   };
 
@@ -125,7 +163,11 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleSearch = () => {
-    fetchNews();
+    if (viewType === 'local') {
+      fetchLocalNews();
+    } else {
+      fetchExploreNews();
+    }
   };
 
   const handleFilterChange = (key, value) => {
@@ -144,8 +186,24 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.pageHeader}>
         <View style={styles.tabBar}>
-          <Text style={styles.tabBarItemActive}>Local</Text>
-          <Text style={styles.tabBarItem}> Explore</Text>
+          <TouchableOpacity 
+            style={styles.tabBarItem}
+            onPress={() => setViewType('local')}
+          >
+            <Text style={[
+              styles.tabBarItemText,
+              viewType === 'local' && styles.tabBarItemActive
+            ]}>Local</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.tabBarItem}
+            onPress={() => setViewType('explore')}
+          >
+            <Text style={[
+              styles.tabBarItemText,
+              viewType === 'explore' && styles.tabBarItemActive
+            ]}>Explore</Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.viewSwitch}>
           <View style={styles.switchItemContainerActive}>
@@ -174,7 +232,7 @@ export default function HomeScreen({ navigation }) {
       </View> */}
 
       <FlatList
-        data={news.news}
+        data={viewType === 'local' ? localNews : exploreNews}
         renderItem={({ item }) => (
           <NewsCard
             news={item}
@@ -190,7 +248,11 @@ export default function HomeScreen({ navigation }) {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No news found in your area</Text>
+            <Text style={styles.emptyText}>
+              {viewType === 'local' 
+                ? 'No news found in your area'
+                : 'No news available to explore'}
+            </Text>
           </View>
         }
       />
@@ -295,9 +357,12 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
   tabBarItem: {
+    paddingVertical: 4,
+  },
+  tabBarItemText: {
     fontSize: 20,
     color: '#00000050',
     fontWeight: '500',

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.1.132:5000/api';
+const API_URL = 'http://192.168.1.15:5000/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -58,7 +58,29 @@ export const authAPI = {
 // News API
 export const newsAPI = {
   createNews: (newsData) => api.post('/news', newsData),
-  getNewsByLocation: (params) => api.get('/news/location', { params }),
+  getNewsByLocation: (params) => {
+    // For local view, use location endpoint
+    if (params.scope === 'local') {
+      return api.get('/news', { 
+        params: {
+          scope: 'local',
+          location: params.location,
+          tag: params.category,
+          page: params.page || 1,
+          limit: params.limit || 10
+        }
+      });
+    }
+    // For explore view, use regular news endpoint
+    return api.get('/news', {
+      params: {
+        scope: 'explore',
+        tag: params.category,
+        page: params.page || 1,
+        limit: params.limit || 10
+      }
+    });
+  },
   verifyNews: (newsId, data) => api.post(`/news/${newsId}/verify`, data),
   flagNews: (newsId, reason) => api.post(`/news/${newsId}/flag`, { reason }),
   searchNews: (params) => api.get('/news/search', { params }),
