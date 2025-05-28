@@ -9,8 +9,11 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { Heart, ChatCircle } from 'phosphor-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSelector } from 'react-redux';
+import { newsAPI } from '../services/api';
 
-export default function NewsCard({ news, onPress }) {
+export default function NewsCard({ news, onPress, onLike }) {
+  const { user } = useSelector((state) => state.auth);
   const {
     content,
     author,
@@ -37,6 +40,15 @@ export default function NewsCard({ news, onPress }) {
     flagPercent = (flagResponse / totalResponse) * 100;
   }
 
+  const isLiked = likes.includes(user?._id);
+
+  const handleLike = async (e) => {
+    e.stopPropagation();
+    if (onLike) {
+      onLike(news._id);
+    }
+  };
+
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.newsContentContainer}>
@@ -45,19 +57,17 @@ export default function NewsCard({ news, onPress }) {
         </Text>
       </View>
       <View style={styles.insights}>
-        <View style={styles.insightItem}>
-          <Heart size={18}/>
-          <Text style={styles.insightItemLabel}>
+        <TouchableOpacity style={styles.insightItem} onPress={handleLike}>
+          <Heart size={18} weight={isLiked ? "fill" : "regular"} color={isLiked ? "#F20D33" : "#00000070"}/>
+          <Text style={[styles.insightItemLabel, isLiked && styles.likedText]}>
             {totalLikes > 0 ? `${totalLikes} like${totalLikes > 1 ? 's' : ''}` : '0 likes'}
           </Text>
-          
-        </View>
+        </TouchableOpacity>
         <View style={styles.insightItem}>
           <ChatCircle size={18}/>
           <Text style={styles.insightItemLabel}>
             {totalComments > 0 ? `${totalComments} comment${totalComments > 1 ? 's' : ''}` : '0 comments'}
           </Text>
-
         </View>
         <View style={styles.insightItem}>
           <Text style={styles.viewText}>24</Text>
@@ -84,6 +94,7 @@ export default function NewsCard({ news, onPress }) {
           <View style={styles.avatars}></View>
         </LinearGradient>
       </View>
+      
       <View style={styles.postDetails}>
         <View style={styles.authorContainer}>
           <Text style={styles.authorLabel}>by</Text>
@@ -129,6 +140,9 @@ const styles = StyleSheet.create({
   insightItemLabel: {
     fontSize: 12,
     color: '#00000070',
+  },
+  likedText: {
+    color: '#F20D33',
   },
   viewText: {
     fontSize: 14,

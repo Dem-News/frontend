@@ -17,7 +17,7 @@ import {
 import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
-import { verifyNews, flagNews, addComment } from '../../store/slices/newsSlice';
+import { verifyNews, flagNews, addComment, setCurrentNews } from '../../store/slices/newsSlice';
 import { newsAPI } from '../../services/api';
 import { Heart, ChatCircle, Check, Flag, ArrowLeft, DotsThreeVertical, ShareFat, ArrowRight, MapPinSimple } from 'phosphor-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -56,16 +56,16 @@ export default function NewsDetailScreen({ route, navigation }) {
   const [showFlagModal, setShowFlagModal] = useState(false);
   const [flagReason, setFlagReason] = useState('');
   const [customReason, setCustomReason] = useState('');
+  const [localNews, setLocalNews] = useState(null);
 
-  const verifyResponse = news.verifications.length;
-  const flagResponse = news.flags.length;
+  const verifyResponse = news?.verifications?.length || 0;
+  const flagResponse = news?.flags?.length || 0;
 
   const totalResponse = verifyResponse + flagResponse;
   
   let verifyPercent = 50;
   let flagPercent = 50;
 
-  
   if (totalResponse > 0) {
     verifyPercent = (verifyResponse / totalResponse) * 100;
     flagPercent = (flagResponse / totalResponse) * 100;
@@ -74,6 +74,12 @@ export default function NewsDetailScreen({ route, navigation }) {
   useEffect(() => {
     fetchComments();
   }, [newsId]);
+
+  useEffect(() => {
+    if (news) {
+      setLocalNews(news);
+    }
+  }, [news]);
 
   const handleBack = () => {
     navigation.goBack();
@@ -171,6 +177,46 @@ export default function NewsDetailScreen({ route, navigation }) {
     }
   };
 
+  const handleLike = async () => {
+    try {
+      setLoading(true);
+      const response = await newsAPI.likeNews(newsId);
+      const updatedNews = { ...news, ...response.data };
+      dispatch(setCurrentNews(updatedNews));
+      setLocalNews(updatedNews);
+    } catch (error) {
+      console.error('Failed to like news:', error);
+      if (error.response?.status === 400 && error.response?.data?.error?.includes('version')) {
+        try {
+          // Refresh the news data to get the latest version
+          const updatedNews = await newsAPI.getNewsByLocation({ newsId });
+          const refreshedNews = { ...news, ...updatedNews.data };
+          dispatch(setCurrentNews(refreshedNews));
+          setLocalNews(refreshedNews);
+          // Try liking again
+          const retryResponse = await newsAPI.likeNews(newsId);
+          const retryUpdatedNews = { ...news, ...retryResponse.data };
+          dispatch(setCurrentNews(retryUpdatedNews));
+          setLocalNews(retryUpdatedNews);
+        } catch (retryError) {
+          Alert.alert('Error', 'Failed to like the news. Please try again.');
+        }
+      } else {
+        Alert.alert('Error', 'Failed to like the news. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!localNews) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -232,13 +278,24 @@ export default function NewsDetailScreen({ route, navigation }) {
             </View>
 
             <View style={styles.insightsContainer}>
-              <View style={styles.insightItem}>
-                <Heart size={24}/>
-                <Text style={styles.insightItemLabel}>{news.likes && news.likes.length > 0 ? likes.length : '0'} likes</Text>
-              </View>
+              <TouchableOpacity style={styles.insightItem} onPress={handleLike}>
+                <Heart 
+                  size={24} 
+                  weight={localNews.likes?.includes(user?._id) ? "fill" : "regular"}
+                  color={localNews.likes?.includes(user?._id) ? "#F20D33" : "#00000070"}
+                />
+                <Text style={[
+                  styles.insightItemLabel,
+                  localNews.likes?.includes(user?._id) && styles.likedText
+                ]}>
+                  {localNews.likes?.length || 0} likes
+                </Text>
+              </TouchableOpacity>
               <View style={styles.insightItem}>
                 <ChatCircle size={24}/>
-                <Text style={styles.insightItemLabel}>{comments && comments.length > 0 ? comments.length : '0'} comments</Text>
+                <Text style={styles.insightItemLabel}>
+                  {comments?.length || 0} comments
+                </Text>
               </View>
               <View style={styles.insightItem}>
                 <Text style={styles.viewText}>24</Text>
@@ -840,5 +897,8 @@ const styles = StyleSheet.create({
   mapPlaceholderText: {
     color: '#666',
     fontSize: 14,
+  },
+  likedText: {
+    color: '#F20D33',
   },
 }); 

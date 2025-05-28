@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.1.15:5000/api';
+const API_URL = 'http://192.168.10.104:5000/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -86,6 +86,7 @@ export const newsAPI = {
   searchNews: (params) => api.get('/news/search', { params }),
   getComments: (newsId) => api.get(`/news/${newsId}/comments`),
   addComment: (newsId, content) => api.post(`/news/${newsId}/comments`, { content }),
+  likeNews: (newsId) => api.post(`/news/${newsId}/like`),
 };
 
 export default api; 

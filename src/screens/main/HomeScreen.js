@@ -9,6 +9,9 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  Alert,
+  Platform,
+  Linking,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,18 +54,58 @@ export default function HomeScreen({ navigation }) {
   const [localNews, setLocalNews] = useState([]);
   const [exploreNews, setExploreNews] = useState([]);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [isLocationEnabled, setIsLocationEnabled] = useState(false);
+  const [hasFetchedLocal, setHasFetchedLocal] = useState(false);
+  const [hasFetchedExplore, setHasFetchedExplore] = useState(false);
 
   useEffect(() => {
-    requestLocationPermission();
-    // Fetch explore news on first load
-    fetchExploreNews();
+    checkLocationServices();
+    if (viewType === 'local') {
+      requestLocationPermission();
+    }
   }, []);
 
   useEffect(() => {
-    if (currentLocation) {
+    if (viewType === 'local' && isLocationEnabled && currentLocation && !hasFetchedLocal) {
       fetchLocalNews();
+      setHasFetchedLocal(true);
+    } 
+  }, [viewType, isLocationEnabled, currentLocation]);
+
+  const checkLocationServices = async () => {
+    try {
+      const enabled = await Location.hasServicesEnabledAsync();
+      setIsLocationEnabled(enabled);
+      if (!enabled && viewType === 'local') {
+        Alert.alert(
+          'Location Services Disabled',
+          'Please enable location services to view local news.',
+          [
+            {
+              text: 'Settings',
+              onPress: () => {
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
+                } else {
+                  Linking.openSettings();
+                }
+              },
+            },
+            {
+              text: 'Switch to Explore',
+              onPress: () => {
+                setViewType('explore');
+                fetchExploreNews();
+              },
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error checking location services:', error);
+      setIsLocationEnabled(false);
     }
-  }, [currentLocation, filters]);
+  };
 
   const requestLocationPermission = async () => {
     try {
@@ -71,20 +114,106 @@ export default function HomeScreen({ navigation }) {
       dispatch(setPermissionStatus(status));
 
       if (status === 'granted') {
+        const enabled = await Location.hasServicesEnabledAsync();
+        if (!enabled) {
+          setIsLocationEnabled(false);
+          Alert.alert(
+            'Location Services Disabled',
+            'Please enable location services to view local news.',
+            [
+              {
+                text: 'Settings',
+                onPress: () => {
+                  if (Platform.OS === 'ios') {
+                    Linking.openURL('app-settings:');
+                  } else {
+                    Linking.openSettings();
+                  }
+                },
+              },
+              {
+                text: 'Switch to Explore',
+                onPress: () => {
+                  setViewType('explore');
+                  fetchExploreNews();
+                },
+              },
+            ]
+          );
+          return;
+        }
+
+        setIsLocationEnabled(true);
         const location = await Location.getCurrentPositionAsync({});
         dispatch(setLocationSuccess({
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         }));
+        // Fetch local news after getting location
+        fetchLocalNews();
       } else {
+        setIsLocationEnabled(false);
+        Alert.alert(
+          'Location Required',
+          'Please enable location services to view local news.',
+          [
+            {
+              text: 'Settings',
+              onPress: () => {
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
+                } else {
+                  Linking.openSettings();
+                }
+              },
+            },
+            {
+              text: 'Switch to Explore',
+              onPress: () => {
+                setViewType('explore');
+                fetchExploreNews();
+              },
+            },
+          ]
+        );
         dispatch(setLocationFailure('Location permission denied'));
       }
     } catch (error) {
+      console.error('Location error:', error);
+      setIsLocationEnabled(false);
+      Alert.alert(
+        'Location Error',
+        'Failed to get your location. Please check your location settings.',
+        [
+          {
+            text: 'Settings',
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Linking.openURL('app-settings:');
+              } else {
+                Linking.openSettings();
+              }
+            },
+          },
+          {
+            text: 'Switch to Explore',
+            onPress: () => {
+              setViewType('explore');
+              fetchExploreNews();
+            },
+          },
+        ]
+      );
       dispatch(setLocationFailure(error.message));
     }
   };
 
   const fetchLocalNews = async () => {
+    if (!isLocationEnabled || !currentLocation) {
+      setLocalNews([]);
+      return;
+    }
+
     try {
       dispatch(fetchNewsStart());
       const response = await newsAPI.getNewsByLocation({
@@ -132,7 +261,10 @@ export default function HomeScreen({ navigation }) {
   const onRefresh = async () => {
     setRefreshing(true);
     if (viewType === 'local') {
-      await fetchLocalNews();
+      await checkLocationServices();
+      if (isLocationEnabled) {
+        await requestLocationPermission();
+      }
     } else {
       await fetchExploreNews();
     }
@@ -162,6 +294,67 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const handleLike = async (newsId) => {
+    try {
+      const response = await newsAPI.likeNews(newsId);
+      // Update the news in the appropriate list while preserving author info
+      if (viewType === 'local') {
+        setLocalNews(prevNews => 
+          prevNews.map(news => 
+            news._id === newsId ? { ...news, ...response.data } : news
+          )
+        );
+      } else {
+        setExploreNews(prevNews => 
+          prevNews.map(news => 
+            news._id === newsId ? { ...news, ...response.data } : news
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Failed to like news:', error);
+      // If it's a version mismatch error, refresh the news data
+      if (error.response?.status === 400 && error.response?.data?.error?.includes('version')) {
+        // Refresh the news data to get the latest version
+        const updatedNews = await newsAPI.getNewsByLocation({ 
+          scope: viewType,
+          newsId 
+        });
+        // Update the appropriate list with fresh data while preserving author info
+        if (viewType === 'local') {
+          setLocalNews(prevNews => 
+            prevNews.map(news => 
+              news._id === newsId ? { ...news, ...updatedNews.data } : news
+            )
+          );
+        } else {
+          setExploreNews(prevNews => 
+            prevNews.map(news => 
+              news._id === newsId ? { ...news, ...updatedNews.data } : news
+            )
+          );
+        }
+        // Try liking again
+        const retryResponse = await newsAPI.likeNews(newsId);
+        if (viewType === 'local') {
+          setLocalNews(prevNews => 
+            prevNews.map(news => 
+              news._id === newsId ? { ...news, ...retryResponse.data } : news
+            )
+          );
+        } else {
+          setExploreNews(prevNews => 
+            prevNews.map(news => 
+              news._id === newsId ? { ...news, ...retryResponse.data } : news
+            )
+          );
+        }
+      } else {
+        Alert.alert('Error', 'Failed to like the news. Please try again.');
+      }
+    }
+  };
+
   const handleSearch = () => {
     if (viewType === 'local') {
       fetchLocalNews();
@@ -188,7 +381,13 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.tabBar}>
           <TouchableOpacity 
             style={styles.tabBarItem}
-            onPress={() => setViewType('local')}
+            onPress={() => {
+              setViewType('local');
+              if (isLocationEnabled && !hasFetchedLocal) {
+                fetchLocalNews();
+                setHasFetchedLocal(true);
+              }
+            }}
           >
             <Text style={[
               styles.tabBarItemText,
@@ -197,7 +396,13 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.tabBarItem}
-            onPress={() => setViewType('explore')}
+            onPress={() => {
+              setViewType('explore');
+              if (!hasFetchedExplore) {
+                fetchExploreNews();
+                setHasFetchedExplore(true);
+              }
+            }}
           >
             <Text style={[
               styles.tabBarItemText,
@@ -205,31 +410,15 @@ export default function HomeScreen({ navigation }) {
             ]}>Explore</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.viewSwitch}>
+        {/* <View style={styles.viewSwitch}>
           <View style={styles.switchItemContainerActive}>
             <List size={20} />
           </View>
           <View style={styles.switchItemContainer}>
             <Text style={styles.viewLabel}>Map</Text>
           </View>
-        </View>
+        </View> */}
       </View>
-      {/* <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search news..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-        />
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setShowFilters(true)}
-        >
-          <Ionicons name="options" size={24} color="#007AFF" />
-        </TouchableOpacity>
-      </View> */}
 
       <FlatList
         data={viewType === 'local' ? localNews : exploreNews}
@@ -239,9 +428,9 @@ export default function HomeScreen({ navigation }) {
             onPress={() => handleNewsPress(item)}
             onVerify={() => handleVerify(item._id)}
             onFlag={(reason) => handleFlag(item._id, reason)}
+            onLike={handleLike}
           />
         )}
-        // ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         keyExtractor={(item, index) => item._id || index.toString()}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -250,7 +439,9 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
               {viewType === 'local' 
-                ? 'No news found in your area'
+                ? isLocationEnabled 
+                  ? 'No news found in your area'
+                  : 'Please enable location services to view local news'
                 : 'No news available to explore'}
             </Text>
           </View>
@@ -377,7 +568,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#EDEDED',
     borderRadius: 16,
     alignItems: 'center',
-    padding: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
   },
   switchItemContainer: {
     paddingHorizontal: 8, 
@@ -509,6 +701,18 @@ const styles = StyleSheet.create({
   applyButtonText: {
     color: '#fff',
     fontSize: 18,
+    fontWeight: '600',
+  },
+  enableLocationButton: {
+    marginTop: 16,
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  enableLocationButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
   },
 }); 
