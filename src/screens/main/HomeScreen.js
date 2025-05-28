@@ -139,6 +139,8 @@ export default function HomeScreen({ navigation }) {
       </View>
     );
   }
+
+  console.log(news.news, "homeScreen")
   return (
     <View style={styles.container}>
       <View style={styles.pageHeader}>

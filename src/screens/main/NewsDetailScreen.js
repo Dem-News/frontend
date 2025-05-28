@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { verifyNews, flagNews, addComment } from '../../store/slices/newsSlice';
 import { newsAPI } from '../../services/api';
-import { Heart, ChatCircle, Check, Flag, ArrowLeft, DotsThreeVertical, ShareFat } from 'phosphor-react-native';
+import { Heart, ChatCircle, Check, Flag, ArrowLeft, DotsThreeVertical, ShareFat, ArrowRight } from 'phosphor-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const FLAG_REASONS = [
@@ -201,59 +201,72 @@ export default function NewsDetailScreen({ route, navigation }) {
         </View>
       </View>
       <ScrollView>
-        <View style={styles.contentContainer}>
-          {news.media && news.media.length > 0 && (
-            <ScrollView horizontal style={styles.mediaContainer}>
-              {news.media.map((media, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: media.url }}
-                  style={styles.media}
-                />
-              ))}
-            </ScrollView>
-          )}
+        <View style={styles.mainContainer}>
+          <View style={styles.contentSection}>
+            {news.media && news.media.length > 0 && (
+              <ScrollView horizontal style={styles.mediaContainer}>
+                {news.media.map((media, index) => (
+                  <Image
+                    key={index}
+                    source={{ uri: media.url }}
+                    style={styles.media}
+                  />
+                ))}
+              </ScrollView>
+            )}
 
-          <Text style={styles.content}>{news.content}</Text>
+            <Text style={styles.content}>{news.content}</Text>
 
-          <View style={styles.insightsContainer}>
-            <View style={styles.insightItem}>
-              <Heart size={24}/>
-              <Text style={styles.insightItemLabel}>{news.likes && news.likes.length > 0 ? likes.length : '0'} likes</Text>
+            <View style={styles.postDetails}>
+              <View style={styles.authorContainer}>
+                <Text style={styles.authorLabel}>by</Text>
+                <View style={styles.authorDetails}>
+                  <Text style={styles.authorName}>{news.author.username}</Text>
+                </View>
+              </View>
+              <Text style={styles.postCreatedTime}>
+                {formatDistanceToNow(new Date(news.createdAt), { addSuffix: true })}
+              </Text>
             </View>
-            <View style={styles.insightItem}>
-              <ChatCircle size={24}/>
-              <Text style={styles.insightItemLabel}>{comments && comments.length > 0 ? comments.length : '0'} comments</Text>
-            </View>
-            <View style={styles.insightItem}>
-              <Text style={styles.viewText}>24</Text>
-              <Text style={styles.insightItemLabel}>views</Text>
+
+            <View style={styles.insightsContainer}>
+              <View style={styles.insightItem}>
+                <Heart size={24}/>
+                <Text style={styles.insightItemLabel}>{news.likes && news.likes.length > 0 ? likes.length : '0'} likes</Text>
+              </View>
+              <View style={styles.insightItem}>
+                <ChatCircle size={24}/>
+                <Text style={styles.insightItemLabel}>{comments && comments.length > 0 ? comments.length : '0'} comments</Text>
+              </View>
+              <View style={styles.insightItem}>
+                <Text style={styles.viewText}>24</Text>
+                <Text style={styles.insightItemLabel}>views</Text>
+              </View>
             </View>
           </View>
 
-          <View style={styles.divider}></View>
+          {/* <View style={styles.divider}></View> */}
 
-          <View style={styles.verificationContainer}>
+          <View style={styles.verificationSection}>
             <View style={styles.verificationHeader}>
               <View style={styles.verificationHeaderContent}>
                 <Text style={styles.verificationTitle}>Verification</Text>
-                <Text style={styles.verificationDescription}>News authenticity details.</Text>
+                <Text style={styles.verificationDescription}>Verification overview</Text>
               </View>
               <View style={styles.actionsContainer}>
+                <TouchableOpacity
+                    style={[styles.secondaryButton, styles.actionButton]}
+                    onPress={handleFlag}
+                    disabled={loading}
+                >
+                  <Flag size={20} color='#F20D33' />
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.secondaryButton, styles.actionButton]}
                   onPress={handleVerify}
                   disabled={loading}
                 >
                   <Check size={20} color='#34C759' />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.secondaryButton, styles.actionButton]}
-                  onPress={handleFlag}
-                  disabled={loading}
-                >
-                  <Flag size={20} color='#F20D33' />
                 </TouchableOpacity>
               </View>
             </View>
@@ -280,39 +293,35 @@ export default function NewsDetailScreen({ route, navigation }) {
               </View>
               <Text style={styles.verificationSupportText}><Text style={styles.verificationSupportNumber}>{totalResponse}</Text> users responsed on news within 2 km radius.</Text>
             </View>
+            <View style={styles.verificationMap}></View>
           </View>
 
-          <View style={styles.divider}></View>
+          {/* <View style={styles.divider}></View> */}
 
-          <View style={styles.authorContainer}>
-            <Text style={styles.author}>{news.author.username}</Text>
-            <Text style={styles.time}>
-              {formatDistanceToNow(new Date(news.createdAt), { addSuffix: true })}
-            </Text>
-          </View>
-
-          <View style={styles.divider}></View>
-
-          <View style={styles.commentsSection}>
-            <Text style={styles.commentsTitle}>Comments</Text>
-            
-            {loadingComments ? (
-              <ActivityIndicator size="small" color="#007AFF" />
-            ) : comments.length > 0 ? (
-              comments.map((comment) => (
-                <View key={comment._id} style={styles.commentContainer}>
-                  <View style={styles.commentHeader}>
-                    <Text style={styles.commentAuthor}>{comment.author.username}</Text>
-                    <Text style={styles.commentTime}>
-                      {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                    </Text>
+          <View style={styles.commentSection}>
+            <View style={styles.commentsSectionHeader}>
+              <Text style={styles.commentsTitle}>Comments</Text>
+            </View>
+            <View style={styles.commentContainer}>
+              {loadingComments ? (
+                <ActivityIndicator size="small" color="#00000070" />
+              ) : comments.length > 0 ? (
+                comments.map((comment) => (
+                  <View key={comment._id} style={styles.commentItem}>
+                    <View style={styles.commentHeader}>
+                      {/* <View style={styles.avatars}></View> */}
+                      <Text style={styles.commentAuthor}>{comment.author.username}</Text>
+                      <Text style={styles.commentTime}>
+                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                      </Text>
+                    </View>
+                    <Text style={styles.commentText}>{comment.content}</Text>
                   </View>
-                  <Text style={styles.commentText}>{comment.content}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.noComments}>No comments yet</Text>
-            )}
+                ))
+              ) : (
+                <Text style={styles.noComments}>No comments yet</Text>
+              )}
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -331,7 +340,7 @@ export default function NewsDetailScreen({ route, navigation }) {
           onPress={handleAddComment}
           disabled={loading || !commentText.trim()}
         >
-          <Ionicons name="send" size={24} color={commentText.trim() ? '#007AFF' : '#ccc'} />
+          <ArrowRight size={20} color='#fff' />
         </TouchableOpacity>
       </View>
       <Modal
@@ -408,12 +417,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  contentContainer: {
+  mainContainer: {
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 8,
     flexDirection: 'column',
     gap: 16,
+  },
+  contentSection: {
+    gap: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -450,6 +462,34 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 12,
   },
+  // Post details
+  postDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },  
+  authorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  authorLabel: {
+    fontSize: 14,
+    color: '#00000070',
+  },
+  authorDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  authorName: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: '#000000',
+  },
+  postCreatedTime: {
+    fontSize: 14,
+    color: '#00000070',
+  },
   // News insights
   insightsContainer: {
     flexDirection: 'row',
@@ -469,20 +509,6 @@ const styles = StyleSheet.create({
   viewText: {
     fontSize: 16,
   },
-  // Author
-  authorContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  author: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  time: {
-    fontSize: 14,
-    color: '#00000070',
-  },
   // Action button
   actionsContainer: {
     flexDirection: 'row',
@@ -496,10 +522,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#00000010',
+    backgroundColor: '#fff', 
   },
   // Verification
-  verificationContainer: {
+  verificationSection: {
     gap: 12,
+    backgroundColor: '#00000005',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#00000010'
   },
   verificationHeader: {
     flexDirection: 'row',
@@ -535,14 +568,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderTopLeftRadius: 8,
     borderBottomLeftRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    padding: 12,
   },
   sliderRight: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    padding: 12,
     borderTopRightRadius: 8,
     borderBottomRightRadius: 8,
   },
@@ -559,71 +590,75 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontWeight: 700,
   },
+  verificationMap: {
+    flex: 1,
+    height: 150,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+  },
   // Comments
-  commentsSection: {
-    padding: 20,
+  commentSection: {
+    gap: 8,
+  },
+  commentContainer: {
+    gap: 12,
   },
   commentsTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 16,
+    fontWeight: '700',
+    color: '#000000',
   },
-  commentContainer: {
-    backgroundColor: '#f8f8f8',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+  commentItem: {
+    gap: 4,
   },
   commentHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    gap: 8,
   },
   commentAuthor: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: '700',
+    color: '#000000',
   },
   commentTime: {
     fontSize: 12,
-    color: '#666',
+    color: '#00000070',
   },
   commentText: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
+    fontSize: 16,
+    color: '#000000',
   },
   noComments: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 16,
+    color: '#00000070',
     textAlign: 'center',
-    fontStyle: 'italic',
   },
   commentInputContainer: {
     flexDirection: 'row',
-    padding: 12,
+    // padding: 12,
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: '#00000007',
     alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   commentInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    maxHeight: 100,
+    fontSize: 14,
+    // borderWidth: 1,
+    // borderColor: '#ddd',
+    // borderRadius: 20,
   },
   commentButton: {
     padding: 8,
+    borderRadius: 12,
+    backgroundColor: '#007AFF',
   },
   commentButtonDisabled: {
-    opacity: 0.5,
+    backgroundColor: '#00000050'
   },
   // Modal
   modalContainer: {

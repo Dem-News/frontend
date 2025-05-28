@@ -47,11 +47,17 @@ export default function NewsCard({ news, onPress }) {
       <View style={styles.insights}>
         <View style={styles.insightItem}>
           <Heart size={18}/>
-          <Text style={styles.insightItemLabel}>{totalLikes && totalLikes > 0 ? totalLikes : '0'} likes</Text>
+          <Text style={styles.insightItemLabel}>
+            {totalLikes > 0 ? `${totalLikes} like${totalLikes > 1 ? 's' : ''}` : '0 likes'}
+          </Text>
+          
         </View>
         <View style={styles.insightItem}>
           <ChatCircle size={18}/>
-          <Text style={styles.insightItemLabel}>{totalComments && totalComments > 0 ? totalComments : '0'} comments</Text>
+          <Text style={styles.insightItemLabel}>
+            {totalComments > 0 ? `${totalComments} comment${totalComments > 1 ? 's' : ''}` : '0 comments'}
+          </Text>
+
         </View>
         <View style={styles.insightItem}>
           <Text style={styles.viewText}>24</Text>
