@@ -12,14 +12,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { verifyNews, flagNews, addComment } from '../../store/slices/newsSlice';
 import { newsAPI } from '../../services/api';
-import { Heart, ChatCircle, Check, Flag, ArrowLeft, DotsThreeVertical, ShareFat, ArrowRight } from 'phosphor-react-native';
+import { Heart, ChatCircle, Check, Flag, ArrowLeft, DotsThreeVertical, ShareFat, ArrowRight, MapPinSimple } from 'phosphor-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const FLAG_REASONS = [
   'inappropriate',
@@ -293,7 +295,76 @@ export default function NewsDetailScreen({ route, navigation }) {
               </View>
               <Text style={styles.verificationSupportText}><Text style={styles.verificationSupportNumber}>{totalResponse}</Text> users responsed on news within 2 km radius.</Text>
             </View>
-            <View style={styles.verificationMap}></View>
+            <View style={styles.verificationMap}>
+              <MapView
+                provider={PROVIDER_GOOGLE}
+                style={styles.map}
+                initialRegion={{
+                  latitude: news.location?.coordinates?.[1] || 27.66439986940669,
+                  longitude: news.location?.coordinates?.[0] || 85.41390653086319,
+                  latitudeDelta: 0.02,
+                  longitudeDelta: 0.02,
+                }}
+                showsUserLocation={true}
+                showsMyLocationButton={true}
+              >
+                {/* News location marker */}
+                <Marker
+                  coordinate={{
+                    latitude: news.location?.coordinates?.[1] || 27.66439986940669,
+                    longitude: news.location?.coordinates?.[0] || 85.41390653086319,
+                  }}
+                  title="News Location"
+                  description={news.content.substring(0, 100) + '...'}
+                >
+                  <View>
+                    <MapPinSimple size={40} color='#FFAA00' />
+                  </View>
+                </Marker>
+                {/* Radius circle */}
+                <Circle
+                  center={{
+                    latitude: news.location?.coordinates?.[1] || 27.66439986940669,
+                    longitude: news.location?.coordinates?.[0] || 85.41390653086319,
+                  }}
+                  radius={1000}
+                  strokeColor="#007AFF"
+                  fillColor="#007AFF10"
+                />
+
+                {/* Verification markers */}
+                {news.verifications && news.verifications.map((verification, index) => (
+                  <Marker
+                    key={`verify-${index}`}
+                    coordinate={{
+                      latitude: verification.location.coordinates[1],
+                      longitude: verification.location.coordinates[0],
+                    }}
+                    title="Verified"
+                  >
+                    <View style={styles.verifyMarker}>
+                      <Check size={16} color="#fff" />
+                    </View>
+                  </Marker>
+                ))}
+
+                {/* Flag markers - using verification location as flag location since it's not in the data */}
+                {news.flags && news.flags.map((flag, index) => (
+                  <Marker
+                    key={`flag-${index}`}
+                    coordinate={{
+                      latitude: (news.location?.coordinates?.[1] || 27.66439986940669) - 0.005,
+                      longitude: (news.location?.coordinates?.[0] || 85.41390653086319) - 0.005,
+                    }}
+                    title={`Flagged: ${flag.reason}`}
+                  >
+                    <View style={styles.flagMarker}>
+                      <Flag size={16} color="#fff" />
+                    </View>
+                  </Marker>
+                ))}
+              </MapView>
+            </View>
           </View>
 
           {/* <View style={styles.divider}></View> */}
@@ -592,9 +663,23 @@ const styles = StyleSheet.create({
   },
   verificationMap: {
     flex: 1,
-    height: 150,
-    backgroundColor: '#fff',
     borderRadius: 12,
+    overflow: 'hidden',
+  },
+  map: {
+    flex: 1,
+    height: 200,
+    width: '100%',
+  },
+  verifyMarker: {
+    backgroundColor: '#34C759',
+    padding: 4,
+    borderRadius: 99,
+  },
+  flagMarker: {
+    backgroundColor: '#F20D33',
+    padding: 4,
+    borderRadius: 99,
   },
   // Comments
   commentSection: {
@@ -636,7 +721,6 @@ const styles = StyleSheet.create({
   },
   commentInputContainer: {
     flexDirection: 'row',
-    // padding: 12,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#00000007',
@@ -648,9 +732,6 @@ const styles = StyleSheet.create({
   commentInput: {
     flex: 1,
     fontSize: 14,
-    // borderWidth: 1,
-    // borderColor: '#ddd',
-    // borderRadius: 20,
   },
   commentButton: {
     padding: 8,
@@ -743,5 +824,14 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: '#00000007',
+  },
+  mapPlaceholder: {
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapPlaceholderText: {
+    color: '#666',
+    fontSize: 14,
   },
 }); 

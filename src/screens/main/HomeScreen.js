@@ -140,7 +140,6 @@ export default function HomeScreen({ navigation }) {
     );
   }
 
-  console.log(news.news, "homeScreen")
   return (
     <View style={styles.container}>
       <View style={styles.pageHeader}>
