@@ -96,6 +96,7 @@ function MainTabs() {
             </View>
           ),
           tabBarLabel: () => null,
+          tabBarStyle: { display: 'none' }
         }}
       />
     </Tab.Navigator>

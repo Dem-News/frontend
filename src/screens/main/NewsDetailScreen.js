@@ -19,7 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { verifyNews, flagNews, addComment, setCurrentNews } from '../../store/slices/newsSlice';
 import { newsAPI } from '../../services/api';
-import { Heart, ChatCircle, Check, Flag, ArrowLeft, DotsThreeVertical, ShareFat, ArrowRight, MapPinSimple } from 'phosphor-react-native';
+import { Heart, ChatCircle, Check, Flag, ArrowLeft, DotsThreeVertical, ShareFat, ArrowRight, MapPinSimple, X } from 'phosphor-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 
@@ -33,10 +33,10 @@ const FLAG_REASONS = [
 ];
 
 const FLAG_REASON_DISPLAY = {
-  inappropriate: 'Inappropriate Content',
-  false_information: 'False Information',
+  inappropriate: 'Inappropriate content',
+  false_information: 'False information',
   spam: 'Spam',
-  hate_speech: 'Hate Speech',
+  hate_speech: 'Hate speech',
   violence: 'Violence',
   other: 'Other'
 };
@@ -124,32 +124,47 @@ export default function NewsDetailScreen({ route, navigation }) {
   }
 
   const handleVerify = async () => {
-    try {
-      setLoading(true);
-      const response = await newsAPI.verifyNews(news._id, {
-        coordinates: {
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude
+    Alert.alert(
+      'Verify News',
+      'Are you sure you want to verify this news? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Verify',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const response = await newsAPI.verifyNews(news._id, {
+                coordinates: {
+                  latitude: currentLocation.latitude,
+                  longitude: currentLocation.longitude
+                }
+              });
+              dispatch(verifyNews(response.data));
+              Alert.alert('Success', 'News verified successfully');
+            } catch (error) {
+              if (error.response) {
+                const status = error.response.status;
+                const message = error.response.data?.error || 'Something went wrong';
+            
+                if (status === 400 && message === 'You have already verified this news') {
+                  alert('You already verified this news.');
+                } else {
+                  alert(`${message}`);
+                }
+              } else {
+                alert('Network or server error.');
+              }
+            } finally {
+              setLoading(false);
+            }
+          }
         }
-      });
-      dispatch(verifyNews(response.data));
-      Alert.alert('Success', 'News verified successfully');
-    } catch (error) {
-      if (error.response) {
-        const status = error.response.status;
-        const message = error.response.data?.error || 'Something went wrong';
-    
-        if (status === 400 && message === 'You have already verified this news') {
-          alert('You already verified this news.');
-        } else {
-          alert(`${message}`);
-        }
-      } else {
-        alert('Network or server error.');
-      }
-    } finally {
-      setLoading(false);
-    }
+      ]
+    );
   };
 
   const handleFlag = () => {
@@ -359,8 +374,8 @@ export default function NewsDetailScreen({ route, navigation }) {
                 initialRegion={{
                   latitude: news.location?.coordinates?.[1] || 27.66439986940669,
                   longitude: news.location?.coordinates?.[0] || 85.41390653086319,
-                  latitudeDelta: 0.02,
-                  longitudeDelta: 0.02,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
                 }}
                 showsUserLocation={true}
                 showsMyLocationButton={true}
@@ -480,59 +495,59 @@ export default function NewsDetailScreen({ route, navigation }) {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Flag News</Text>
+              <Text style={styles.modalTitle}>Flag news</Text>
               <TouchableOpacity
-                onPress={() => setShowFlagModal(false)}
-                style={styles.closeButton}
-              >
-                <Ionicons name="close" size={24} color="#333" />
+                  style={styles.secondaryButton}
+                  onPress={() => setShowFlagModal(false)}
+                  disabled={loading}
+                >
+                  <X size={16} />
               </TouchableOpacity>
             </View>
-
-            <View style={styles.flagSection}>
-              <Text style={styles.flagLabel}>Select a reason</Text>
-              <View style={styles.reasonsContainer}>
-                {FLAG_REASONS.map((reason) => (
-                  <TouchableOpacity
-                    key={reason}
+            <View style={styles.reasonsContainer}>
+              {FLAG_REASONS.map((reason) => (
+                <TouchableOpacity
+                  key={reason}
+                  style={[
+                    styles.reasonButton,
+                    flagReason === reason && styles.reasonButtonActive,
+                  ]}
+                  onPress={() => setFlagReason(reason)}
+                >
+                  <Text
                     style={[
-                      styles.reasonButton,
-                      flagReason === reason && styles.reasonButtonActive,
+                      styles.reasonText,
+                      flagReason === reason && styles.reasonTextActive,
                     ]}
-                    onPress={() => setFlagReason(reason)}
                   >
-                    <Text
-                      style={[
-                        styles.reasonText,
-                        flagReason === reason && styles.reasonTextActive,
-                      ]}
-                    >
-                      {FLAG_REASON_DISPLAY[reason]}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {flagReason === 'Other' && (
-                <TextInput
-                  style={styles.customReasonInput}
-                  placeholder="Please specify the reason..."
-                  value={customReason}
-                  onChangeText={setCustomReason}
-                  multiline
-                />
-              )}
+                    {FLAG_REASON_DISPLAY[reason]}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
 
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleFlagSubmit}
-              disabled={loading}
-            >
-              <Text style={styles.submitButtonText}>
-                {loading ? 'Submitting...' : 'Submit Flag'}
-              </Text>
-            </TouchableOpacity>
+            {flagReason === 'Other' && (
+              <TextInput
+                style={styles.customReasonInput}
+                placeholder="Please specify the reason..."
+                value={customReason}
+                onChangeText={setCustomReason}
+                multiline
+              />
+            )}
+
+            <View style={styles.submitButtonCOntainer}>
+              <Text style={styles.submitButtonTextInfo}>Flagginng news will impact it's authenticity and visibility.</Text>
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleFlagSubmit}
+                disabled={loading}
+              >
+                <Text style={styles.submitButtonText}>
+                  {loading ? 'Submitting...' : 'Submit'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -808,38 +823,35 @@ const styles = StyleSheet.create({
   // Modal
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+    padding: 12,
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 12,
     maxHeight: '80%',
+    borderWidth: 1,
+    backgroundColor: '#fff',
+    borderColor: '#00000010',
+    // iOS Shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    // Android Shadow
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  closeButton: {
-    padding: 8,
-  },
-  flagSection: {
-    marginBottom: 20,
-  },
-  flagLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 10,
+    fontWeight: '700',
+    color: '#000',
   },
   reasonsContainer: {
     flexDirection: 'row',
@@ -847,22 +859,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   reasonButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    marginRight: 8,
-    marginBottom: 8,
+    borderRadius: 12,
+    backgroundColor: '#00000007',
+    borderWidth: 1,
+    borderColor: '#00000010',
   },
   reasonButtonActive: {
-    backgroundColor: '#FF5252',
+    borderColor: '#000',
   },
   reasonText: {
     fontSize: 14,
-    color: '#666',
+    color: '#00000070',
   },
   reasonTextActive: {
-    color: '#fff',
+    color: '#000',
+    fontWeight: 700,
   },
   customReasonInput: {
     borderWidth: 1,
@@ -873,10 +886,22 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
   },
+  submitButtonCOntainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  submitButtonTextInfo: {
+    flex: 1,
+    fontSize: 14,
+    color: '#00000070',
+  },
   submitButton: {
-    backgroundColor: '#FF5252',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   submitButtonText: {

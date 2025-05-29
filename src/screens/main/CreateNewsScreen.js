@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { addNews } from '../../store/slices/newsSlice';
 import { newsAPI } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ArrowLeft, Camera, Images, X } from 'phosphor-react-native';
 
 const CATEGORIES = [
   'politics',
@@ -36,23 +37,57 @@ export default function CreateNewsScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [news, setNews] = useState({ news: [] });
 
+  const handleBack = () => {
+    navigation.goBack();
+  };
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant permission to access your media library');
-      return;
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant permission to access your media library');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+        allowsMultipleSelection: true,
+      });
+
+      if (!result.canceled) {
+        const newMedia = result.assets.map(asset => asset.uri);
+        setMedia([...media, ...newMedia]);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      console.error('Image picker error:', error);
     }
+  };
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
-      allowsEditing: true,
-      quality: 0.8,
-    });
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant permission to access your camera');
+        return;
+      }
 
-    if (!result.canceled) {
-      setMedia([...media, result.assets[0].uri]);
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setMedia([...media, result.assets[0].uri]);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+      console.error('Camera error:', error);
     }
   };
 
@@ -98,60 +133,29 @@ export default function CreateNewsScreen({ navigation }) {
   
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Title"
-          value={title}
-          onChangeText={setTitle}
-          maxLength={100}
-        />
-
-        <TextInput
-          style={[styles.input, styles.contentInput]}
-          placeholder="Write your news here..."
-          value={content}
-          onChangeText={setContent}
-          multiline
-          numberOfLines={6}
-          textAlignVertical="top"
-        />
-
-        <View style={styles.categoryContainer}>
-          <Text style={styles.label}>Category:</Text>
-          <View style={styles.categories}>
-            {CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={[
-                  styles.categoryButton,
-                  category === cat && styles.categoryButtonActive,
-                ]}
-                onPress={() => setCategory(cat)}
-              >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    category === cat && styles.categoryTextActive,
-                  ]}
-                >
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.mediaContainer}>
-          <Text style={styles.label}>Media:</Text>
-          <TouchableOpacity
-            style={styles.mediaButton}
-            onPress={pickImage}
+    <View style={styles.container}>
+      <View style={styles.pageHeader}>
+        <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={handleBack}
+            disabled={loading}
           >
-            <Ionicons name="image-outline" size={24} color="#007AFF" />
-            <Text style={styles.mediaButtonText}>Add Media</Text>
-          </TouchableOpacity>
+            <ArrowLeft size={20} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView>
+        <View style={styles.formContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Write your news here..."
+            value={content}
+            onChangeText={setContent}
+            multiline
+            numberOfLines={10}
+            textAlignVertical="top"
+          />
+
           {media.length > 0 && (
             <View style={styles.mediaPreview}>
               {media.map((uri, index) => (
@@ -161,14 +165,31 @@ export default function CreateNewsScreen({ navigation }) {
                     style={styles.removeMedia}
                     onPress={() => setMedia(media.filter((_, i) => i !== index))}
                   >
-                    <Ionicons name="close-circle" size={24} color="#FF5252" />
+                    {/* <X size={20} color="#F20D33" /> */}
+                    <Text style={styles.removeText}>Remove</Text>
                   </TouchableOpacity>
                 </View>
               ))}
             </View>
           )}
         </View>
+      </ScrollView>
 
+      <View style={styles.actionContainer}>
+        <View style={styles.buttonGroup}>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={takePhoto}
+          >
+            <Camera size={24} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={pickImage}
+          >
+            <Images size={24} />
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity
           style={[styles.submitButton, loading && styles.submitButtonDisabled]}
           onPress={handleSubmit}
@@ -177,11 +198,11 @@ export default function CreateNewsScreen({ navigation }) {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.submitButtonText}>Post News</Text>
+            <Text style={styles.submitButtonText}>Post</Text>
           )}
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -190,79 +211,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  form: {
-    padding: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  contentInput: {
-    height: 150,
-  },
-  categoryContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#333',
-  },
-  categories: {
+  // page header
+  pageHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingTop: 40,
+    paddingBottom: 8,
+    justifyContent: 'flex-start'
   },
-  categoryButton: {
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#00000010',
+    backgroundColor: '#fff', 
+  },
+  // Form
+  formContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    marginRight: 8,
-    marginBottom: 8,
+    paddingBottom: 100,
   },
-  categoryButtonActive: {
-    backgroundColor: '#007AFF',
-  },
-  categoryText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  categoryTextActive: {
-    color: '#fff',
+  input: {
+    fontSize: 20,
+    fontWeight: 600,
+    minHeight: 200,
   },
   mediaContainer: {
     marginBottom: 20,
   },
-  mediaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  mediaButtonText: {
-    color: '#007AFF',
-    marginLeft: 8,
-    fontSize: 16,
-  },
   mediaPreview: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 12,
     gap: 8,
   },
   mediaItem: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
+    flex: 1,
+    aspectRatio: 16/9,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   mediaImage: {
@@ -271,17 +258,45 @@ const styles = StyleSheet.create({
   },
   removeMedia: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    padding: 4,
+    paddingHorizontal: 8,
+    bottom: 8,
+    right: 8,
     backgroundColor: '#fff',
     borderRadius: 12,
   },
+  removeText: {
+    fontSize: 14,
+    color: '#F20D33',
+    fontWeight: 600,
+  },
+  // Action container
+  actionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#00000010',
+  },
   submitButton: {
     backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    gap: 8,
   },
   submitButtonDisabled: {
     opacity: 0.7,
