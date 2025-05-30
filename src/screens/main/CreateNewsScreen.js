@@ -12,8 +12,6 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
-import { Ionicons } from '@expo/vector-icons';
 import { addNews } from '../../store/slices/newsSlice';
 import { newsAPI } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -30,15 +28,16 @@ const CATEGORIES = [
 export default function CreateNewsScreen({ navigation }) {
   const dispatch = useDispatch();
   const { currentLocation } = useSelector((state) => state.location);
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState('none');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('other');
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [news, setNews] = useState({ news: [] });
 
   const handleBack = () => {
     navigation.goBack();
+    setContent('');
+    setMedia([]);
   };
 
   const pickImage = async () => {
